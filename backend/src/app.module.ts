@@ -12,6 +12,7 @@ import KeyvRedis from '@keyv/redis';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -24,16 +25,21 @@ import KeyvRedis from '@keyv/redis';
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true, // dev only
+        synchronize: configService.get<string>('NODE_ENV') !== 'production',
       }),
     }),
     MeterModule,
     CacheModule.registerAsync({
       isGlobal: true,
-      useFactory: async () => {
-
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
         try {
-          const redisUrl = `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || '6379'}`;
+          const redisHost = configService.get<string>('REDIS_HOST') || 'localhost';
+          const redisPort = configService.get<number>('REDIS_PORT') || 6379;
+          const redisUrl = `redis://${redisHost}:${redisPort}`;
+          
+          console.log('Redis URL:', redisUrl);
           
           const keyvRedis = new KeyvRedis(redisUrl);
           const keyv = new Keyv({ store: keyvRedis });
@@ -47,7 +53,7 @@ import KeyvRedis from '@keyv/redis';
 
           return {
             stores: [keyv],
-            ttl: 300000, // 5 minutes in milliseconds for cache-manager v6
+            ttl: 300000, // 5 minutes in milliseconds
           };
         } catch (error) {
           console.error('Failed to create Redis store:', error);

@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+  const configService = app.get(ConfigService);
+
   app.enableCors();
 
   // Swagger configuration
@@ -27,8 +29,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3001);
-  console.log(`Application is running on: http://${process.env.BASE_URL}:${process.env.NEST_PORT}`);
-  console.log(`Swagger docs available at: http://${process.env.BASE_URL}:${process.env.NEST_PORT}/api/docs`);
+  const host = configService.get<string>('HOST');
+  const port = configService.get<number>('NEXT_PUBLIC_API_PORT', 3001);
+
+  await app.listen(port);
+  console.log(`Application is running on: http://${host}:${port}`);
+  console.log(`Swagger docs available at: http://${host}:${port}/api/docs`);
 }
 bootstrap();

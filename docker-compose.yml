@@ -4,15 +4,15 @@ services:
     container_name: exnaton-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-exnaton}
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT}:${DB_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,7 +22,7 @@ services:
     container_name: exnaton-redis
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -38,24 +38,25 @@ services:
     container_name: exnaton-backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      PORT: ${PORT:-3001}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASS: ${DB_PASS:-postgres}
-      DB_NAME: ${DB_NAME:-exnaton}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      NODE_ENV: ${NODE_ENV}
+      HOST: ${HOST}
+      PORT: ${NEXT_PUBLIC_API_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     ports:
-      - "${PORT:-3001}:3001"
+      - "${NEXT_PUBLIC_API_PORT}:${NEXT_PUBLIC_API_PORT}"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://${HOST}:${NEXT_PUBLIC_API_PORT}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -65,22 +66,21 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: backend
-        NEXT_PUBLIC_API_PORT: 3001
-        NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID:-tenant-a}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_API_PORT: ${NEXT_PUBLIC_API_PORT}
+        NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID}
     container_name: exnaton-frontend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_API_BASE_URL: backend
-      NEXT_PUBLIC_API_PORT: 3001
-      NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID:-tenant-a}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      NEXT_PUBLIC_API_PORT: ${NEXT_PUBLIC_API_PORT}
+      NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID}
     ports:
-      - "3000:3000"
+      - "${PORT}:${PORT}"
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://${HOST}:${PORT}"]
       interval: 30s
       timeout: 10s
       retries: 3
