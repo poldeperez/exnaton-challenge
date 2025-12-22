@@ -1,0 +1,95 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
+
+# But allow example files
+!.env.example
+!**/.env.example
+
+# Compiled output
+dist/
+build/
+.next/
+**/dist/
+**/build/
+**/.next/
+out/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+**/.nyc_output/
+**/coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IDE - Other
+.idea/
+*.sublime-workspace
+*.sublime-project
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# Temp files
+.temp/
+.tmp/
+*.tmp
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Next.js
+.next/
+out/
+.vercel
+
+# Turbo
+.turbo
+
+# Package manager
+.pnpm-store/
+.yarn/
