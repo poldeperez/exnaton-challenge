@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Headers, Body, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiHeader } from '@nestjs/swagger';
 import { MeterService } from './meterdata.service';
 import { IngestDto } from './dto/ingest.dto';
 import { MeasurementQueryDto } from './dto/measurement-query.dto';
 import { MeasurementResponseDto } from './dto/measurement-response.dto';
 import { InstallationDto } from './dto/installation-response.dto';
+import { TenantGuard } from '../common/guards/tenant.guard';
+import { TenantId } from '../common/decorators/tenant.decorator';
 
 @ApiTags('meterdata')
 @Controller('meterdata')
@@ -24,6 +26,7 @@ export class MeterController {
     }
 
     @Get('/installations')
+    @UseGuards(TenantGuard)
     @ApiOperation({ 
         summary: 'Get installations for tenant',
         description: 'Retrieves all installations and their associated meters for a given tenant'
@@ -41,14 +44,12 @@ export class MeterController {
         type: [InstallationDto]
     })
     @ApiResponse({ status: 400, description: 'Missing X-Tenant-ID header' })
-    async getMeters(@Headers('x-tenant-id') tenantId: string) {
-        if (!tenantId) {
-            throw new BadRequestException('Missing X-Tenant-ID header');
-        }
+    async getMeters(@TenantId() tenantId: string) {
         return this.meterService.getInstallationsByTenant(tenantId);
     }
 
     @Get('measurement')
+    @UseGuards(TenantGuard)
     @ApiOperation({ 
         summary: 'Get energy measurements',
         description: 'Retrieves aggregated energy production and consumption data for a specific installation and time range'
@@ -68,12 +69,8 @@ export class MeterController {
     @ApiResponse({ status: 400, description: 'Bad request - missing or invalid parameters' })
     async getMeasurements(
         @Query() query: MeasurementQueryDto,
-        @Headers('x-tenant-id') tenantId: string,
+        @TenantId() tenantId: string,
     ) {
-        if (!tenantId) {
-            throw new BadRequestException('Missing X-Tenant-ID header');
-        }
-
         const {
             solarMeterId,
             solarObisCode,
@@ -115,7 +112,9 @@ export class MeterController {
         return {
             data: rows.map((r: any) => ({
                 measurement: 'energy',
-                timestamp: r.timestamp.toISOString(),
+                timestamp: r.timestamp instanceof Date 
+                    ? r.timestamp.toISOString() 
+                    : r.timestamp,
                 solar_value: Number(r.solar_value),
                 consumption_value: Number(r.consumption_value),
                 self_consumption: Number(r.self_consumption),

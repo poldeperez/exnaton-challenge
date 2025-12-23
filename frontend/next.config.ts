@@ -10,12 +10,12 @@ const nextConfig: NextConfig = {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'localhost';
     const apiPort = process.env.NEXT_PUBLIC_API_PORT || '3001';
 
-    console.log('Rewriting /api to:', `http://${apiBaseUrl}:${apiPort}`);
+    console.log('Rewriting /api to:', `http://${apiBaseUrl}:${apiPort}/api`);
     
     return [
       {
         source: '/api/:path*',
-        destination: `http://${apiBaseUrl}:${apiPort}/:path*`,
+        destination: `http://${apiBaseUrl}:${apiPort}/api/:path*`,
       },
     ];
   },
