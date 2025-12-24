@@ -3,6 +3,7 @@ name: CD Pipeline
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -26,6 +27,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             cd $APP_PATH
+            ls
             git pull origin main
             docker-compose down
             docker-compose up -d --build
