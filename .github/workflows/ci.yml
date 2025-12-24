@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '24'
@@ -21,7 +22,7 @@ jobs:
         env:
           POSTGRES_DB: exnaton_test
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -70,7 +71,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
-          DB_PASS: postgres
+          DB_PASS: ${{ secrets.TEST_DB_PASSWORD }}
           DB_NAME: exnaton_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -84,7 +85,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
-          DB_PASS: postgres
+          DB_PASS: ${{ secrets.TEST_DB_PASSWORD }}
           DB_NAME: exnaton_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -177,7 +178,7 @@ jobs:
           DB_HOST=postgres
           DB_PORT=5432
           DB_USER=postgres
-          DB_PASS=postgres
+          DB_PASS=${{ secrets.TEST_DB_PASSWORD }}
           DB_NAME=exnaton
           REDIS_HOST=redis
           REDIS_PORT=6379
