@@ -59,14 +59,7 @@ Bottle necks:
 
 ## Architecture
 
-It consists of a **backend** (NestJS, PostgreSQL, Redis) and a **frontend** (Next.js, React, TypeScript). 
-
-```
-┌────────────┐      ┌───────────────┐      ┌─────────────┐
-│  Frontend  │ <--> │   Backend     │ <--> │  PostgreSQL │
-│ (Next.js)  │      │ (NestJS API)  │      │   & Redis   │
-└────────────┘      └───────────────┘      └─────────────┘
-```
+It consists of a **backend** (NestJS, PostgreSQL, Redis) and a **frontend** (Next.js, React, TypeScript).
 
 ### Prerequisites
 
@@ -116,5 +109,7 @@ NestJS REST API on top of Node.js handles authentication, business logic and dat
 ## Future steps
 
 Create a Log in page to pass a jwt token for authenticating requests
+
 Develop an Analysis page
+
 User functionalities: Profile/settings/Log out
