@@ -26,7 +26,7 @@ jobs:
           APP_PATH: ${{ secrets.EC2_APP_PATH }}
         run: |
           ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-            cd $APP_PATH
+            cd exnaton-challenge
             ls
             git pull origin main
             docker-compose down
