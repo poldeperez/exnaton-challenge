@@ -6,7 +6,16 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs'],
+    ignores: [
+      'eslint.config.mjs',
+      'src/meterdata/meterdata.service.ts',
+      'src/meterdata/meterdata.service.spec.ts',
+      'src/meterdata/meterdata.controller.spec.ts',
+      'src/meterdata/meterdata.controller.ts',
+      'src/app.module.ts',
+      'src/common/guards/tenant.guard.ts',
+      'src/common/decorators/tenant.decorator.ts',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

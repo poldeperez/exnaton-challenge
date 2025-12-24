@@ -10,7 +10,7 @@ export class AppService {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: this.configService.get('NODE_ENV', 'development'),
+      environment: this.configService.get<string>('NODE_ENV', 'development'),
     };
   }
 }

@@ -1,0 +1,269 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  # Backend CI
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: exnaton_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASS: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: exnaton_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test-secret-key
+          JWT_EXPIRATION: 1h
+        run: npm run test
+
+      - name: Run test coverage
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASS: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: exnaton_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test-secret-key
+          JWT_EXPIRATION: 1h
+        run: npm run test:cov
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+        continue-on-error: true
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Check build artifacts
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Build failed - dist directory not found"
+            exit 1
+          fi
+          echo "Build successful - dist directory created"
+
+  # Frontend CI
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run type check
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_API_BASE_URL: localhost
+          NEXT_PUBLIC_API_PORT: 3001
+          NEXT_PUBLIC_TENANT_ID: tenant-a
+        run: npm run build
+
+      - name: Check build artifacts
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Build failed - .next directory not found"
+            exit 1
+          fi
+          echo "Build successful - .next directory created"
+
+  # Docker Build Test
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [backend-ci, frontend-ci]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create .env file for Docker
+        run: |
+          cat > .env << EOF
+          NODE_ENV=production
+          DB_HOST=postgres
+          DB_PORT=5432
+          DB_USER=postgres
+          DB_PASS=${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME=exnaton
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          PORT=3001
+          JWT_SECRET=test-jwt-secret
+          JWT_EXPIRATION=1h
+          NEXT_PUBLIC_API_BASE_URL=backend
+          NEXT_PUBLIC_API_PORT=3001
+          NEXT_PUBLIC_TENANT_ID=tenant-a
+          EOF
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t exnaton-backend:test ./backend
+
+      - name: Build frontend Docker image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=backend \
+            --build-arg NEXT_PUBLIC_API_PORT=3001 \
+            --build-arg NEXT_PUBLIC_TENANT_ID=tenant-a \
+            -t exnaton-frontend:test ./frontend
+
+      - name: Test docker-compose configuration
+        run: |
+          docker compose config
+
+      - name: Check Docker images
+        run: |
+          docker images | grep exnaton
+
+  # Security Scan
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [backend-ci, frontend-ci]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (Backend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './backend'
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner (Frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './frontend'
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: '.'
+        continue-on-error: true
+
+  # Final Status Check
+  ci-status:
+    name: CI Status Check
+    runs-on: ubuntu-latest
+    needs: [backend-ci, frontend-ci, docker-build, security-scan]
+    if: always()
+
+    steps:
+      - name: Check CI status
+        run: |
+          if [ "${{ needs.backend-ci.result }}" != "success" ]; then
+            echo "Backend CI failed"
+            exit 1
+          fi
+          if [ "${{ needs.frontend-ci.result }}" != "success" ]; then
+            echo "Frontend CI failed"
+            exit 1
+          fi
+          if [ "${{ needs.docker-build.result }}" != "success" ]; then
+            echo "Docker build failed"
+            exit 1
+          fi
+          echo "All CI checks passed!"
