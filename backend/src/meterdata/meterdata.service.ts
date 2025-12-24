@@ -52,7 +52,7 @@ export class MeterService {
       );
     }
 
-    const json = await response.json();
+    const json: { data: any[] } = await response.json();
     if (!json || !Array.isArray(json.data)) {
       throw new Error('Invalid meter data format: expected { data: [...] }');
     }
@@ -69,7 +69,7 @@ export class MeterService {
       console.log('Cache hit:', cacheKey);
       return cached;
     }
-    
+
     const results = await this.repo
       .createQueryBuilder('r')
       .select('r.installationId', 'id')
@@ -87,7 +87,9 @@ export class MeterService {
           .select('r.meterId', 'meterId')
           .addSelect('r.obisCode', 'obisCode')
           .where('r.tenantId = :tenantId', { tenantId })
-          .andWhere('r.installationId = :installationId', { installationId: r.id })
+          .andWhere('r.installationId = :installationId', {
+            installationId: r.id,
+          })
           .groupBy('r.meterId')
           .addGroupBy('r.obisCode')
           .getRawMany();
@@ -102,9 +104,14 @@ export class MeterService {
           name,
           meterCount: Number(r.meterCount),
           meters: meters.map((m) => ({
-            meterId: m.meterId,
-            obisCode: m.obisCode,
+            meterId: m.meterId as string,
+            obisCode: m.obisCode as string,
           })),
+        } as {
+          id: string;
+          name: string;
+          meterCount: number;
+          meters: { meterId: string; obisCode: string }[];
         };
       }),
     );
@@ -143,16 +150,17 @@ export class MeterService {
       const cached = await this.cacheManager.get(cacheKey);
       if (cached) {
         console.log('Cache HIT:', cacheKey);
-        
+
         // Normalize cached data
-        return Array.isArray(cached) 
-            ? cached.map(item => ({
-                ...item,
-                timestamp: typeof item.timestamp === 'string' 
-                    ? new Date(item.timestamp) 
-                    : item.timestamp
-              }))
-            : cached;
+        return Array.isArray(cached)
+          ? cached.map((item) => ({
+              ...item,
+              timestamp:
+                typeof item.timestamp === 'string'
+                  ? new Date(item.timestamp)
+                  : item.timestamp,
+            }))
+          : cached;
       }
       console.log('Cache MISS:', cacheKey);
     } catch (error) {
@@ -163,8 +171,8 @@ export class MeterService {
       interval === 'y'
         ? `date_trunc('month', timestamp)`
         : interval === 'd'
-        ? `timestamp`
-        : `date_trunc('day', timestamp)`; // week and month
+          ? `timestamp`
+          : `date_trunc('day', timestamp)`; // week and month
 
     const query = `
       SELECT
@@ -213,7 +221,6 @@ export class MeterService {
       const ttl = 3600000; // 1 hour in milliseconds (3600 * 1000)
       await this.cacheManager.set(cacheKey, result, ttl);
       console.log('Cached result with key:', cacheKey, 'TTL:', ttl);
-      
     } catch (error) {
       console.error('Cache SET error:', error);
     }

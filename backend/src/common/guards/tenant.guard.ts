@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MeterReading } from '../../meterdata/meterdata.entity';
@@ -9,7 +15,7 @@ export class TenantGuard implements CanActivate {
     @InjectRepository(MeterReading)
     private meterReadingRepository: Repository<MeterReading>,
   ) {}
-    
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const tenantId = request.headers['x-tenant-id'];
