@@ -1,8 +1,20 @@
-import { Injectable, ExecutionContext, UnauthorizedException, } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Request } from 'express';
 import { MeterReading } from '../../meterdata/meterdata.entity';
+
+interface RequestWithUser extends Request {
+  user?: {
+    tenantId: string;
+  };
+  tenantId?: string;
+}
 
 @Injectable()
 export class JwtTenantGuard extends AuthGuard('jwt') {
@@ -21,7 +33,7 @@ export class JwtTenantGuard extends AuthGuard('jwt') {
       throw new UnauthorizedException('Invalid or missing JWT');
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
 
     // TenantId comes from JWT payload (req.user)
     const tenantId = request.user?.tenantId;
@@ -36,7 +48,7 @@ export class JwtTenantGuard extends AuthGuard('jwt') {
       .select('1')
       .where('meter_reading.tenantId = :tenantId', { tenantId })
       .limit(1)
-      .getRawOne();
+      .getRawOne<unknown>();
 
     if (!tenantExists) {
       throw new UnauthorizedException('Tenant not found or unauthorized');
