@@ -1,13 +1,9 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, BadRequestException, UnauthorizedException, } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MeterReading } from '../../meterdata/meterdata.entity';
+
+// This guard is now obsolete. Now we use the jwt-tenant guard with the generation of token
 
 @Injectable()
 export class TenantGuard implements CanActivate {

@@ -22,7 +22,7 @@ export interface DashboardProps {
 }
 
 export interface FetchMeterDataParams {
-  tenantId: string;
+  token: string;
   installationId: string;
   solarMeterId: string;
   solarObisCode: string;

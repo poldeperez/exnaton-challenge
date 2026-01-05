@@ -1,25 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  UseGuards,
-  BadRequestException,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiSecurity,
-  ApiHeader,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Query, UseGuards, BadRequestException, } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiHeader, } from '@nestjs/swagger';
 import { MeterService } from './meterdata.service';
 import { IngestDto } from './dto/ingest.dto';
 import { MeasurementQueryDto } from './dto/measurement-query.dto';
 import { MeasurementResponseDto } from './dto/measurement-response.dto';
 import { InstallationDto } from './dto/installation-response.dto';
-import { TenantGuard } from '../common/guards/tenant.guard';
+import { JwtTenantGuard } from '../common/guards/jwt-tenant.guard';
 import { TenantId } from '../common/decorators/tenant.decorator';
 
 @ApiTags('meterdata')
@@ -44,7 +30,7 @@ export class MeterController {
   }
 
   @Get('/installations')
-  @UseGuards(TenantGuard)
+  @UseGuards(JwtTenantGuard)
   @ApiOperation({
     summary: 'Get installations for tenant',
     description:
@@ -68,7 +54,7 @@ export class MeterController {
   }
 
   @Get('measurement')
-  @UseGuards(TenantGuard)
+  @UseGuards(JwtTenantGuard)
   @ApiOperation({
     summary: 'Get energy measurements',
     description:

@@ -6,7 +6,7 @@ export function useMeasurements(params: FetchMeterDataParams) {
   return useQuery({
     queryKey: [
       'measurements',
-      params.tenantId,
+      params.token,
       params.installationId,
       params.solarMeterId,
       params.solarObisCode,
