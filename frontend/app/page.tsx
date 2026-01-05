@@ -9,21 +9,36 @@ import { DASHBOARD_TABS } from '@/lib/dashboard.config'
 import { calculateIndicators } from '@/lib/calculateIndicators';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { useInstallations } from '@/hooks/useInstallations';
-
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID!;
+import { getJwtToken } from '@/lib/auth';
 
 export default function HomePage() {
   const [selectedTabId, setSelectedTabId] = useState<string>('1');
   const [selectedInstallation, setSelectedInstallation] = useState<Installation>();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
-  const [date, setDate] = useState<string>('2023-02-01');
+  const [date, setDate] = useState<string>('2023-02-01');  
+  const [token, setToken] = useState<string | null>(null);
+
+
+  // Fetch JWT token on mount. Simulates Log in
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const token = await getJwtToken();
+        setToken(token);
+      } catch (err) {
+        console.log('[page] token fetch failed:', err);
+        setToken(null);
+      }
+    };
+    fetchToken();
+  }, []);
 
   // Fetch installations with React Query
   const {
     data: installations = [],
     isLoading: loadingInstallations,
     error: installationsError,
-  } = useInstallations(TENANT_ID);
+  } = useInstallations(token ?? '');
 
   // Set initial installation when data loads
   useEffect(() => {
@@ -51,7 +66,7 @@ export default function HomePage() {
 
   // Use the measurements hook with caching
   const { data: meterData = [], isLoading: loading, error: meterDataError } = useMeasurements({
-    tenantId: TENANT_ID,
+    token: token ?? '',
     installationId: selectedInstallation?.id ?? '',
     solarMeterId: solarMeter?.meterId ?? '',
     solarObisCode: solarMeter?.obisCode ?? '',
@@ -65,6 +80,14 @@ export default function HomePage() {
 
   const indicators = calculateIndicators(meterData ?? []);
   const error = installationsError?.message || metersError || (meterDataError as Error)?.message || null;
+
+  if (!token) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        Loading authentication...
+      </div>
+    );
+  }
 
   if (installationsError) {
     return <div className="flex items-center justify-center min-h-screen text-red-600">{error}</div>;

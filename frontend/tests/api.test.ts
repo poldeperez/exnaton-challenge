@@ -60,7 +60,7 @@ describe('API Service', () => {
   describe('fetchMeterData', () => {
     it('should fetch measurements successfully', async () => {
       const params = {
-        tenantId: 'test-tenant',
+        token: 'test-tenant',
         installationId: 'test-installation',
         solarMeterId: 'solar-meter-123',
         solarObisCode: '0100021D00FF',
@@ -106,7 +106,7 @@ describe('API Service', () => {
 
     it('should include all query parameters', async () => {
       const params = {
-        tenantId: 'test-tenant',
+        token: 'test-tenant',
         solarMeterId: 'solar-001',
         solarObisCode: '0100021D00FF',
         consumptionMeterId: 'cons-001',

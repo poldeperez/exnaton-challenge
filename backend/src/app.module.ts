@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MeterModule } from './meterdata/meterdata.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { AuthModule } from './auth/auth.module';
 import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
 
@@ -28,6 +29,7 @@ import KeyvRedis from '@keyv/redis';
       }),
     }),
     MeterModule,
+    AuthModule,
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],

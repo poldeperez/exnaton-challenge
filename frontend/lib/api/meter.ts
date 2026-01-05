@@ -5,7 +5,7 @@ export async function fetchMeterData({
   solarObisCode,
   consumptionMeterId,
   consumptionObisCode,
-  tenantId,
+  token,
   installationId,
   start,
   stop,
@@ -27,9 +27,7 @@ export async function fetchMeterData({
   const res = await fetch(
     `/api/meterdata/measurement?${params.toString()}`,
     {
-      headers: {
-        'x-tenant-id': tenantId,
-      },
+      headers: { Authorization: `Bearer ${token}`,},
     },
   );
 
@@ -46,9 +44,9 @@ export async function fetchMeterData({
   }));
 }
 
-export async function fetchInstallations(tenantId: string): Promise<Installation[]> {
+export async function fetchInstallations(token: string): Promise<Installation[]> {
   const res = await fetch('/api/meterdata/installations', {
-    headers: { 'x-tenant-id': tenantId },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {
