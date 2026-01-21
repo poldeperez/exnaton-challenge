@@ -13,8 +13,11 @@ export default function BarChartSection({ meterData, viewMode }: { meterData: Me
         ? new Date(point.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
+            timeZone: 'UTC',
           })
-        : new Date(point.timestamp).toLocaleDateString(),
+        : new Date(point.timestamp).toLocaleDateString([], {
+            timeZone: 'UTC',
+          }),
   }));
 
   const hasSolarData = meterData.length > 0 && meterData.some(p => Number(p.solar_value) > 0);
